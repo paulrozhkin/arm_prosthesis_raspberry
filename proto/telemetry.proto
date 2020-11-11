@@ -1,6 +1,5 @@
 syntax="proto3";
 package telemetry;
-import "google/protobuf/timestamp.proto";
 import "enums.proto";
 import "uuid.proto";
 
@@ -10,7 +9,7 @@ message Telemetry {
   enums.ModuleStatusType display_status = 3;
   enums.ModuleStatusType gyro_status = 4;
   enums.DriverStatusType driver_status = 5;
-  google.protobuf.Timestamp last_time_sync = 6;
+  int64 last_time_sync = 6;
   int32 emg = 7;
   uuid.UUID executable_gesture = 8;
   int32 power = 9;

@@ -1,20 +1,19 @@
 syntax = "proto3";
 package telemetry;
-import "google/protobuf/timestamp.proto";
 import "uuid.proto";
 
 message GetGestures {
-  google.protobuf.Timestamp last_time_sync = 1;
+  int64 last_time_sync = 1;
   repeated Gesture gestures = 2;
 }
 
 message SaveGesture {
-  google.protobuf.Timestamp time_sync = 1;
+  int64 time_sync = 1;
   Gesture gesture = 2;
 }
 
 message DeleteGesture {
-  google.protobuf.Timestamp time_sync = 1;
+  int64 time_sync = 1;
   uuid.UUID id = 2;
 }
 
@@ -37,7 +36,7 @@ message SetPositions {
 message Gesture {
   uuid.UUID id = 1;
   string name = 2;
-  google.protobuf.Timestamp last_time_sync = 3;
+  int64 last_time_sync = 3;
   bool iterable = 4;
   int32 repetitions = 5;
   repeated GestureAction actions = 6;
