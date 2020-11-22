@@ -16,8 +16,7 @@ def get_adc_value():
 def recognize_adc(gesture_queue):
     volt_adc = round(adc_value*3/65536, 2)
     print("VOLT: "+str(volt_adc))
-    #уведомить поток gesture executor (main)
-    #тут выбрать жест из памяти или ...
+    #if a gesture is recognized, select it from memory by id and notify the main thread
     rec = random.randint(1, 100)
     if rec > 50:
         ListActions = []

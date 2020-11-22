@@ -46,7 +46,7 @@ def serial_ports():
 def data_received(data):
     print(data)
 
-#this thread serves I2C devices like ADC, Display, Accelerometer
+# this thread serves I2C devices like ADC, Display, Accelerometer
 class I2C_thread(Thread):
     def run(self):
         display_time = time.time()
@@ -58,7 +58,7 @@ class I2C_thread(Thread):
                 display_time = now
                 send_to_display()
 
-#this thread performs analysis of readings from the EMG-sensor after ADC
+# this thread performs analysis of readings from the EMG-sensor after ADC
 class adc_recognizer_thread(Thread):
     def run(self):
         while 1:
@@ -66,21 +66,21 @@ class adc_recognizer_thread(Thread):
             recognize_adc(gesture_queue)
             time.sleep(0.005)
 
-#this thread serves telemetry receiving from Driver Motors via SPI connection
+# this thread serves telemetry receiving from Driver Motors via SPI connection
 class SPI_telemetry_thread(Thread):
     def run(self):
         while 1:
             get_telemetry("SPI")
             time.sleep(0.017)
 
-#this thread serves answers from Driver Motors via SPI connection
+# this thread serves answers from Driver Motors via SPI connection
 class SPI_answer_thread(Thread):
     def run(self):
         while 1:
             get_SPI_answer()
             time.sleep(1)
 
-#this thread serves the execution of gestures (sending positions to the Driver Motors via SPI connection)
+# this thread serves the execution of gestures (sending positions to the Driver Motors via SPI connection)
 class SPI_set_position_thread(Thread):
     cur = Gesture
     def run(self):
@@ -111,7 +111,7 @@ class SPI_set_position_thread(Thread):
                 print("End of gesture execution")
 
 
-#this thread serves execution of commands that came via MQTT Proxy
+# this thread serves execution of commands that came via MQTT Proxy
 class MQTT_commands_executor_thread(Thread):
     def run(self):
         global interrupt
@@ -121,7 +121,7 @@ class MQTT_commands_executor_thread(Thread):
             #always send telemetry
             send_telemetry_to_MQTT()
             time.sleep(1/frequency)
-            # sometimes exec commands
+            #sometimes exec commands
             command = MQTT_command_queue.get()
             if command:
                 if command.Name == "Telemetry":
@@ -142,7 +142,7 @@ class MQTT_commands_executor_thread(Thread):
                 elif command.Name == "PerformGestureId":
                     id = command.Payload
                     gesture = find_gesture_by_id(id)
-                    # we need a priority queue (gesture_queue) to perform the gesture from MQTT immediately
+                    #we need a priority queue (gesture_queue) to perform the gesture from MQTT immediately
                     if gesture != None:
                         gesture_queue.put(gesture)
                         interrupt = 1
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     # value to stop execute low priority gesture
     global interrupt
 
-    #run multithreading
+    # run multithreading
     threaded()
 
     # main thread is used for starting gestures executions and receiving commands from MQTT Proxy

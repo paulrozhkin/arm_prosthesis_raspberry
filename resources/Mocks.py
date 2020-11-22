@@ -1,6 +1,6 @@
 import random
 '''
-mocks instead of real interfaces
+    mocks instead of real interfaces
 '''
 def ADC_MOCK():
     return random.randint(0, 65535)
@@ -75,4 +75,3 @@ def SPI_SET_POSITION_REQUEST(action):
     request = [A, B, PointerFingerPosition, MiddleFingerPosition, RingFinderPosition,
                LittleFingerPosition, ThumbFingerPosition, CRC8, I, G, K, L, M, N, O, P]
     return request
-

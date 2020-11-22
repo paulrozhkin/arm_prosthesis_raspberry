@@ -2,7 +2,7 @@ from resources.DataStructures import Command
 from SPI.DriverMotors import get_telemetry
 
 '''
-functional that execute commands from MQTT and just refer to it
+    functional that execute commands from MQTT and just refer to it
 '''
 def send_telemetry_to_MQTT():
     driver_state = get_telemetry("MQTT")
