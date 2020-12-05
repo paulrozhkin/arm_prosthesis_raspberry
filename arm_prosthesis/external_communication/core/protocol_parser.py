@@ -1,0 +1,2 @@
+class ProtocolParser:
+    pass

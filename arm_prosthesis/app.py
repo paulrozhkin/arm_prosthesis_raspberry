@@ -15,9 +15,10 @@ class App:
         self.init_logger()
         self._logger = logging.getLogger('Main')
         self._logger.info('Logger init. Start app.')
+        self._logger.info(f'App settings:\n{self._config}')
 
         self._hand = HandController()
-        self._communication = Communication(self._hand)
+        self._communication = Communication(self._hand, self._config)
 
         self._communication_thread = threading.Thread(target=self._communication.run)
         self._hand_controller_thread = threading.Thread(target=self._hand.run)
@@ -45,7 +46,7 @@ class App:
 
         logging.basicConfig(
             level=logging.DEBUG,
-            format='%(asctime)s,%(msecs)d %(levelname)-8s [%(filename)s:%(lineno)d] %(message)s',
+            format='%(asctime)s %(levelname)-8s [%(threadName)s] [%(filename)s:%(lineno)d] %(message)s',
             handlers=handlers
         )
 
