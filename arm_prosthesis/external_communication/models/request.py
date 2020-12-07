@@ -1,4 +1,4 @@
-from arm_prosthesis.external_communication.core.iresponse_writer import IResponseWriter
+from arm_prosthesis.external_communication.core.connectors.iresponse_writer import IResponseWriter
 from arm_prosthesis.external_communication.models.command_type import CommandType
 
 

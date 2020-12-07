@@ -57,7 +57,7 @@ class Communication:
             e = sys.exc_info()[0]
             logging.error(f'Error request handling: {e}')
             error_response = Response(CommandType.Error)
-            request.response_writer.write(error_response)
+            request.response_writer.write_response(error_response)
 
     def handle_set_positions_request(self, payload: bytearray):
         logging.info(f'Start handling set positions')

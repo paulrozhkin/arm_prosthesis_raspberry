@@ -1,7 +1,7 @@
 from enum import Enum
 import crc8
 
-from arm_prosthesis.external_communication.core.connectors.request_connector_dto import RequestConnectorDto
+from arm_prosthesis.external_communication.core.connectors.package_dto import PackageDto
 from arm_prosthesis.external_communication.models.command_type import CommandType
 
 
@@ -17,7 +17,7 @@ class ProtocolParser:
     _sfd = b'\xfd\xba\xdc\x01\x50\xb4\x11\xff'
 
     _state: ProtocolState
-    _current_request: RequestConnectorDto
+    _current_request: PackageDto
     _buffer: bytearray
 
     def __init__(self):
@@ -27,7 +27,7 @@ class ProtocolParser:
         self._crc_calculator = crc8.crc8()
 
     @property
-    def current_request(self) -> RequestConnectorDto:
+    def current_request(self) -> PackageDto:
         return self._current_request
 
     @property
@@ -47,7 +47,7 @@ class ProtocolParser:
         if self.state == ProtocolState.SFD:
             if len(self._buffer) == 8:
                 if self._buffer == self._sfd:
-                    self._current_request = RequestConnectorDto()
+                    self._current_request = PackageDto()
                     self._state = ProtocolState.TYPE
                 else:
                     self._buffer.pop(0)
@@ -79,3 +79,34 @@ class ProtocolParser:
                             self._state = ProtocolState.SFD
                         else:
                             raise Exception('Invalid protocol state')
+
+    @staticmethod
+    def create_package(command_type: CommandType, payload: bytes) -> PackageDto:
+        package = PackageDto()
+
+        package.command_type = command_type
+
+        if payload is None:
+            package.payload_size = 0
+        else:
+            package.payload_size = len(payload)
+            package.payload = payload
+
+        return package
+
+    def serialize_package(self, package: PackageDto):
+        ser_package = bytearray()
+        package_crc_calculator = crc8.crc8()
+
+        ser_package.extend(self._sfd)
+        ser_package.append(package.command_type.value)
+        ser_package.extend(package.payload_size.to_bytes(2, 'little'))
+
+        if package.payload_size != 0:
+            ser_package.extend(package.payload)
+
+        package_crc_calculator.update(ser_package[8:])
+        crc = package_crc_calculator.digest()
+        ser_package.extend(crc)
+
+        return ser_package

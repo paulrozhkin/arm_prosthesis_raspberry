@@ -1,12 +1,15 @@
 from arm_prosthesis.external_communication.models.command_type import CommandType
 
 
-class RequestConnectorDto:
+class PackageDto:
     _command_type: CommandType
     _payload_size: int
     _payload: bytes
     _received_crc8: int
     _real_crc8: int
+    
+    def __init__(self):
+        self._payload = None
 
     @property
     def command_type(self) -> CommandType:

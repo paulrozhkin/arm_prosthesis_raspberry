@@ -9,4 +9,4 @@ class IResponseWriter:
         pass
 
     @abstractmethod
-    def write(self, response: Response): raise NotImplementedError
+    def write_response(self, response: Response): raise NotImplementedError

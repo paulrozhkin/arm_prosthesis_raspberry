@@ -110,6 +110,63 @@ class TestProtocolParser(unittest.TestCase):
         assert parser.current_request.received_crc8 == b'\x8a'
         assert parser.current_request.real_crc8 == b'\x23'
 
+    def test_create_package(self):
+        # Given
+        command = CommandType.GetGestures
+        payload = bytes(b'\xba\x05')
+
+        # When
+        package = ProtocolParser.create_package(command, payload)
+
+        # Then
+        assert command == package.command_type
+        assert payload == package.payload
+        assert len(payload) == package.payload_size
+
+    def test_create_package_with_empty_payload(self):
+        # Given
+        command = CommandType.GetGestures
+
+        # When
+        package = ProtocolParser.create_package(command, None)
+
+        # Then
+        assert command == package.command_type
+        assert package.payload is None
+        assert 0 == package.payload_size
+
+    def test_serialize(self):
+        # Given
+        command = CommandType.GetGestures
+        payload = bytes(b'\xba\x05')
+
+        expected_bytes = bytes(b'\xfd\xba\xdc\x01\x50\xb4\x11\xff\x06\x02\x00\xba\x05\xb1')
+
+        parser = ProtocolParser()
+
+        # When
+        package = ProtocolParser.create_package(command, payload)
+        ser_package = parser.serialize_package(package)
+
+        # Then
+        assert expected_bytes == ser_package
+
+    def test_serialize_with_empty_payload(self):
+        # Given
+        command = CommandType.GetSettings
+        payload = None
+
+        expected_bytes = bytes(b'\xfd\xba\xdc\x01\x50\xb4\x11\xff\x04\x00\x00\xab')
+
+        parser = ProtocolParser()
+
+        # When
+        package = ProtocolParser.create_package(command, payload)
+        ser_package = parser.serialize_package(package)
+
+        # Then
+        assert expected_bytes == ser_package
+
 
 if __name__ == '__main__':
     unittest.main()
