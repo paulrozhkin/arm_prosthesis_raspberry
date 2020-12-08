@@ -3,7 +3,7 @@ from arm_prosthesis.external_communication.models.command_type import CommandTyp
 
 
 class Request:
-    def __init__(self, command_type: CommandType, payload: bytearray, response_writer: IResponseWriter):
+    def __init__(self, command_type: CommandType, payload: bytes, response_writer: IResponseWriter):
         self._command_type = command_type
         self._payload = payload
         self._response_writer = response_writer
@@ -13,7 +13,7 @@ class Request:
         return self._command_type
 
     @property
-    def payload(self) -> bytearray:
+    def payload(self) -> bytes:
         return self._payload
 
     @property

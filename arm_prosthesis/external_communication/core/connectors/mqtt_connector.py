@@ -6,6 +6,7 @@ from queue import Queue
 from bluedot.btcomm import BluetoothClient
 
 from arm_prosthesis.config.configuration import Config
+from arm_prosthesis.external_communication.core.connectors.irequest_writer import IPackageReceiver
 from arm_prosthesis.external_communication.core.connectors.iresponse_writer import IResponseWriter
 from arm_prosthesis.external_communication.core.connectors.package_dto import PackageDto
 from arm_prosthesis.external_communication.core.protocol_parser import ProtocolParser
@@ -13,7 +14,7 @@ from arm_prosthesis.external_communication.models.request import Request
 from arm_prosthesis.external_communication.models.response import Response
 
 
-class MqttConnector(threading.Thread, IResponseWriter):
+class MqttConnector(threading.Thread, IResponseWriter, IPackageReceiver):
     _logger = logging.getLogger('Main')
     _mqtt_address: str
     _is_mqtt_connected: bool
@@ -30,7 +31,7 @@ class MqttConnector(threading.Thread, IResponseWriter):
         self._request_transmitter = request_transmitter
         self._mqtt_address = config.mqtt_address
         self._is_mqtt_connected = False
-        self._protocol_parser = ProtocolParser()
+        self._protocol_parser = ProtocolParser(self)
 
     def run(self):
         self._logger.info('Mqtt running start')
@@ -65,14 +66,23 @@ class MqttConnector(threading.Thread, IResponseWriter):
             time.sleep(10)
 
     def data_received_handler(self, data):
-        self._logger.debug(f'MQTT receive {len(data)}')
+        self._logger.debug(f'MQTT receive {len(data)} bytes')
         self._protocol_parser.update(data)
 
     def write_response(self, response: Response):
-        self._logger.critical(
-            f'MQTT try to send response with type {response.command_type} and payload length {len(response.payload)}')
+        payload_length = 0
+        if response.payload is not None:
+            payload_length = {len(response.payload)}
+
+        self._logger.info(
+            f'MQTT try to send response with type {response.command_type} and payload length {payload_length}')
         package = self._protocol_parser.create_package(response.command_type, response.payload)
         self.send(self._protocol_parser.serialize_package(package))
+
+    def receive_package(self, package: PackageDto):
+        self._logger.info(f'MQTT receive new package {package.command_type} with size {package.payload_size} bytes')
+        new_request = Request(package.command_type, package.payload, self)
+        self._request_transmitter.put(new_request)
 
     def send(self, payload: bytes):
         if self._bluetooth_client is None:

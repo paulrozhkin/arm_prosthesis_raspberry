@@ -37,7 +37,7 @@ class Communication:
         self._logger.info('Communication running')
 
         if self._mqtt_connector:
-            self._mqtt_connector.run()
+            self._mqtt_connector.start()
 
         while 1:
             self._logger.info('Wait new request')

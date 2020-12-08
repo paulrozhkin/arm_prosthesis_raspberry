@@ -23,15 +23,15 @@ class Gesture:
 
     @property
     def last_time_sync(self) -> int:
-        return self.last_time_sync
+        return self._last_time_sync
 
     @property
     def iterable(self) -> bool:
-        return self.iterable
+        return self._iterable
 
     @property
     def repetitions(self) -> int:
-        return self.repetitions
+        return self._repetitions
 
     @property
     def actions(self) -> List[GestureAction]:

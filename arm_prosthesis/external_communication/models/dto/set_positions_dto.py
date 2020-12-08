@@ -1,4 +1,5 @@
 from arm_prosthesis.external_communication.models.dto.entity_dto import EntityDto
+from gestures_pb2 import SetPositions
 
 
 class SetPositionsDto(EntityDto):
@@ -34,4 +35,11 @@ class SetPositionsDto(EntityDto):
         raise NotImplementedError
 
     def deserialize(self, byte_array: bytearray):
-        raise NotImplementedError
+        position_protobuf = SetPositions()
+        position_protobuf.ParseFromString(byte_array)
+
+        self._little_finger_position = position_protobuf.little_finger_position
+        self._ring_finger_position = position_protobuf.ring_finger_position
+        self._middle_finger_position = position_protobuf.middle_finger_position
+        self._index_finger_position = position_protobuf.pointer_finger_position
+        self._thumb_finger_position = position_protobuf.thumb_finger_position
