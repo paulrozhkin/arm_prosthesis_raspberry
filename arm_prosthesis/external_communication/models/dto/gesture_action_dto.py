@@ -1,15 +1,15 @@
 from arm_prosthesis.external_communication.models.dto.entity_dto import EntityDto
-from gestures_pb2 import SetPositions
+from gestures_pb2 import GestureAction
 
 
-class SetPositionsDto(EntityDto):
-
+class GestureActionDto(EntityDto):
     def __init__(self):
         self._little_finger_position = 0
         self._ring_finger_position = 0
         self._middle_finger_position = 0
         self._index_finger_position = 0
         self._thumb_finger_position = 0
+        self._delay = 0
 
     @property
     def little_finger_position(self) -> int:
@@ -31,15 +31,20 @@ class SetPositionsDto(EntityDto):
     def thumb_finger_position(self) -> int:
         return self._thumb_finger_position
 
-    def serialize(self) -> bytearray:
+    @property
+    def delay(self) -> int:
+        return self._delay
+
+    def create_from_protobuf_action(self, action_proto: GestureAction):
+        self._little_finger_position = action_proto.little_finger_position
+        self._ring_finger_position = action_proto.ring_finger_position
+        self._middle_finger_position = action_proto.middle_finger_position
+        self._index_finger_position = action_proto.pointer_finger_position
+        self._thumb_finger_position = action_proto.thumb_finger_position
+        self._delay = action_proto.delay
+
+    def serialize(self) -> bytes:
         raise NotImplementedError
 
     def deserialize(self, byte_array: bytes):
-        position_protobuf = SetPositions()
-        position_protobuf.ParseFromString(byte_array)
-
-        self._little_finger_position = position_protobuf.little_finger_position
-        self._ring_finger_position = position_protobuf.ring_finger_position
-        self._middle_finger_position = position_protobuf.middle_finger_position
-        self._index_finger_position = position_protobuf.pointer_finger_position
-        self._thumb_finger_position = position_protobuf.thumb_finger_position
+        raise NotImplementedError

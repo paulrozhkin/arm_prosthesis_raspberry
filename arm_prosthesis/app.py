@@ -7,6 +7,7 @@ import logging
 from arm_prosthesis.external_communication.core.communication import Communication
 from arm_prosthesis.hand_controller import HandController
 from arm_prosthesis.config.configuration import load_config
+from arm_prosthesis.services.gesture_repository import GestureRepository
 
 
 class App:
@@ -18,7 +19,8 @@ class App:
         self._logger.info(f'App settings:\n{self._config}')
 
         self._hand = HandController()
-        self._communication = Communication(self._hand, self._config)
+        self._gesture_repository = GestureRepository('')
+        self._communication = Communication(self._hand, self._config, self._gesture_repository)
 
         self._communication_thread = threading.Thread(target=self._communication.run)
         self._hand_controller_thread = threading.Thread(target=self._hand.run)

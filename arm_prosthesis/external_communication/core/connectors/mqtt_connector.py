@@ -19,6 +19,7 @@ class MqttConnector(threading.Thread, IResponseWriter, IPackageReceiver):
     _mqtt_address: str
     _is_mqtt_connected: bool
     _bluetooth_client: BluetoothClient = None
+    _response_mutex = threading.Lock()
 
     def __init__(self, config: Config, request_transmitter: 'Queue[Request]'):
         threading.Thread.__init__(self)
@@ -70,6 +71,8 @@ class MqttConnector(threading.Thread, IResponseWriter, IPackageReceiver):
         self._protocol_parser.update(data)
 
     def write_response(self, response: Response):
+        self._response_mutex.acquire()
+
         payload_length = 0
         if response.payload is not None:
             payload_length = {len(response.payload)}
@@ -78,6 +81,8 @@ class MqttConnector(threading.Thread, IResponseWriter, IPackageReceiver):
             f'MQTT try to send response with type {response.command_type} and payload length {payload_length}')
         package = self._protocol_parser.create_package(response.command_type, response.payload)
         self.send(self._protocol_parser.serialize_package(package))
+
+        self._response_mutex.release()
 
     def receive_package(self, package: PackageDto):
         self._logger.info(f'MQTT receive new package {package.command_type} with size {package.payload_size} bytes')

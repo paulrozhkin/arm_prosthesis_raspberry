@@ -26,9 +26,9 @@ class HandController:
             # if there is a gesture in queue, we start execute it
             gesture: Gesture = self._set_gesture_queue.get()
             self._logger.info('New gesture receive from the queue. Start execute gesture')
-            self.gesture_executor(gesture)
+            self._gesture_executor(gesture)
 
-    def gesture_executor(self, gesture: Gesture):
+    def _gesture_executor(self, gesture: Gesture):
         if gesture is None:
             raise TypeError
 
@@ -76,4 +76,8 @@ class HandController:
         actions_list = [action]
         gesture = Gesture(self._uuid_set_positions, "SET_POSITIONS", 0, False, 1, actions_list)
 
+        self._set_gesture_queue.put(gesture)
+
+    def perform_gesture(self, gesture: Gesture):
+        self._logger.info('Perform gesture start')
         self._set_gesture_queue.put(gesture)
