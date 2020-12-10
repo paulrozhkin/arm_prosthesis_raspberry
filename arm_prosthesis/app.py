@@ -1,4 +1,5 @@
 # Press the green button in the gutter to run the script.
+import os
 import sys
 import threading
 import time
@@ -19,7 +20,7 @@ class App:
         self._logger.info(f'App settings:\n{self._config}')
 
         self._hand = HandController()
-        self._gesture_repository = GestureRepository('')
+        self._gesture_repository = GestureRepository(self._config.gestures_path)
         self._communication = Communication(self._hand, self._config, self._gesture_repository)
 
         self._communication_thread = threading.Thread(target=self._communication.run)
@@ -41,6 +42,9 @@ class App:
         handlers = [stdout_handler]
 
         if self._config.log_to_file:
+            if os.path.isdir(self._config.path_to_log) is False:
+                os.makedirs(self._config.path_to_log)
+
             log_file = self._config.path_to_log + '/' + session_name + '.log'
             print("Log file is: " + log_file)
             file_handler = logging.FileHandler(filename=log_file)

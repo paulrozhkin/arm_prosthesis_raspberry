@@ -1,5 +1,6 @@
 import logging
 import sys
+import traceback
 from queue import Queue
 
 from arm_prosthesis.config.configuration import Config
@@ -12,6 +13,7 @@ from arm_prosthesis.external_communication.models.dto.save_gesture_dto import Sa
 from arm_prosthesis.external_communication.models.dto.set_positions_dto import SetPositionsDto
 from arm_prosthesis.external_communication.models.request import Request
 from arm_prosthesis.external_communication.models.response import Response
+from arm_prosthesis.external_communication.services.dto_to_entity_converter import DtoToEntityConverter
 from arm_prosthesis.hand_controller import HandController
 from arm_prosthesis.models.positions import Positions
 from arm_prosthesis.services.gesture_repository import GestureRepository
@@ -77,7 +79,7 @@ class Communication:
                 self.handle_perform_gesture_raw(request.payload)
                 request.response_writer.write_response(Response(CommandType.Ok, None))
         except:
-            e = sys.exc_info()[0]
+            e = traceback.format_exc()
             logging.error(f'Error request handling: {e}')
             error_response = Response(CommandType.Error)
             request.response_writer.write_response(error_response)
@@ -113,16 +115,14 @@ class Communication:
         perform_gesture_by_id_dto.deserialize(payload)
 
         gesture = self._gesture_repository.get_gesture_by_id(perform_gesture_by_id_dto.id)
-        # TODO: add gesture dto to gesture converter
-        # self._hand_controller.perform_gesture()
+
+        self._hand_controller.perform_gesture(DtoToEntityConverter.convert_gesture_dto_to_gesture(gesture))
 
     def handle_perform_gesture_raw(self, payload):
         logging.info(f'Start handling perform gesture raw')
 
         perform_gesture_raw_dto = PerformGestureRawDto()
         perform_gesture_raw_dto.deserialize(payload)
-        
-        # TODO: add gesture dto to gesture converter
-        # perform_gesture_raw_dto.gesture_dto
-        # self._hand_controller.perform_gesture()
 
+        self._hand_controller.perform_gesture(
+            DtoToEntityConverter.convert_gesture_dto_to_gesture(perform_gesture_raw_dto.gesture_dto))

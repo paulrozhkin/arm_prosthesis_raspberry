@@ -52,7 +52,19 @@ class GestureDto(EntityDto):
             self._actions.append(gesture)
 
     def serialize(self) -> bytes:
-        pass
+        gesture_proto = Gesture()
+        gesture_proto.id.value = self.id
+        gesture_proto.name = self.name
+        gesture_proto.last_time_sync = self.last_time_sync
+        gesture_proto.iterable = self.iterable
+        gesture_proto.repetitions = self.repetitions
+
+        for action in self.actions:
+            gesture_proto.actions.append(action.convert_to_protobuf_action())
+
+        return gesture_proto.SerializeToString()
 
     def deserialize(self, byte_array: bytes):
-        pass
+        gesture_proto = Gesture()
+        gesture_proto.ParseFromString(byte_array)
+        self.create_from_protobuf_gesture(gesture_proto)

@@ -4,12 +4,13 @@ from configparser import ConfigParser
 
 class Config:
     def __init__(self, log_to_file: bool, path_to_log: str, mqtt_enabled: bool, mqtt_address: str,
-                 rfcomm_enabled: bool):
+                 rfcomm_enabled: bool, gestures_path: str):
         self._path_to_log = path_to_log
         self._log_to_file = log_to_file
         self._mqtt_enabled = mqtt_enabled
         self._mqtt_address = mqtt_address
         self._rfcomm_enabled = rfcomm_enabled
+        self._gestures_path = gestures_path
 
     @property
     def path_to_log(self) -> str:
@@ -31,6 +32,10 @@ class Config:
     def rfcomm_enabled(self) -> bool:
         return self._rfcomm_enabled
 
+    @property
+    def gestures_path(self) -> str:
+        return self._gestures_path
+
     def __str__(self):
         return json.dumps(self.__dict__, indent=2)
 
@@ -47,7 +52,8 @@ def load_config(path_to_config_ini: str) -> Config:
         config_parser.get('logger', 'path_to_logs'),
         mqtt_enabled,
         mqtt_address,
-        config_parser.getboolean('rfcomm', 'rfcomm_enabled')
+        config_parser.getboolean('rfcomm', 'rfcomm_enabled'),
+        config_parser.get('gestures', 'gestures_path')
     )
 
     return config
