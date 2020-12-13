@@ -6,9 +6,11 @@ import time
 import logging
 
 from arm_prosthesis.external_communication.core.communication import Communication
+from arm_prosthesis.external_communication.services.telemetry_service import TelemetryService
 from arm_prosthesis.hand_controller import HandController
 from arm_prosthesis.config.configuration import load_config
 from arm_prosthesis.services.gesture_repository import GestureRepository
+from arm_prosthesis.services.settings_dao import SettingsDao
 
 
 class App:
@@ -19,9 +21,14 @@ class App:
         self._logger.info('Logger init. Start app.')
         self._logger.info(f'App settings:\n{self._config}')
 
+        self._settings_dao = SettingsDao(self._config.settings_path)
+        self._logger.info(f'Prosthesis settings:\n{self._settings_dao.get()}')
+
         self._hand = HandController()
         self._gesture_repository = GestureRepository(self._config.gestures_path)
-        self._communication = Communication(self._hand, self._config, self._gesture_repository)
+        self._telemetry_service = TelemetryService()
+        self._communication = Communication(self._hand, self._config, self._gesture_repository, self._telemetry_service,
+                                            self._settings_dao)
 
         self._communication_thread = threading.Thread(target=self._communication.run)
         self._hand_controller_thread = threading.Thread(target=self._hand.run)
@@ -60,4 +67,3 @@ class App:
 if __name__ == '__main__':
     app = App()
     app.run()
-

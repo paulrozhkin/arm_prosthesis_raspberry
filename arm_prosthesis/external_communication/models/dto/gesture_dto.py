@@ -51,7 +51,7 @@ class GestureDto(EntityDto):
             gesture.create_from_protobuf_action(action_protobuf)
             self._actions.append(gesture)
 
-    def serialize(self) -> bytes:
+    def convert_to_protobuf_gesture(self) -> Gesture:
         gesture_proto = Gesture()
         gesture_proto.id.value = self.id
         gesture_proto.name = self.name
@@ -61,6 +61,11 @@ class GestureDto(EntityDto):
 
         for action in self.actions:
             gesture_proto.actions.append(action.convert_to_protobuf_action())
+
+        return gesture_proto
+
+    def serialize(self) -> bytes:
+        gesture_proto = self.convert_to_protobuf_gesture()
 
         return gesture_proto.SerializeToString()
 

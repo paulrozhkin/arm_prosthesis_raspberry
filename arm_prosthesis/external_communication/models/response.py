@@ -2,7 +2,7 @@ from arm_prosthesis.external_communication.models.command_type import CommandTyp
 
 
 class Response:
-    def __init__(self, command_type: CommandType, payload: bytearray = None):
+    def __init__(self, command_type: CommandType, payload: bytes = None):
         self._command_type = command_type
         self._payload = payload
 
@@ -11,5 +11,5 @@ class Response:
         return self._command_type
 
     @property
-    def payload(self) -> bytearray:
+    def payload(self) -> bytes:
         return self._payload

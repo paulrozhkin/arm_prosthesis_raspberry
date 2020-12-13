@@ -10,6 +10,7 @@ from arm_prosthesis.external_communication.core.connectors.irequest_writer impor
 from arm_prosthesis.external_communication.core.connectors.iresponse_writer import IResponseWriter
 from arm_prosthesis.external_communication.core.connectors.package_dto import PackageDto
 from arm_prosthesis.external_communication.core.protocol_parser import ProtocolParser
+from arm_prosthesis.external_communication.models.command_type import CommandType
 from arm_prosthesis.external_communication.models.request import Request
 from arm_prosthesis.external_communication.models.response import Response
 
@@ -33,6 +34,13 @@ class MqttConnector(threading.Thread, IResponseWriter, IPackageReceiver):
         self._mqtt_address = config.mqtt_address
         self._is_mqtt_connected = False
         self._protocol_parser = ProtocolParser(self)
+
+    @property
+    def connected(self) -> bool:
+        if self._bluetooth_client is not None:
+            return self._bluetooth_client.connected
+        else:
+            return False
 
     def run(self):
         self._logger.info('Mqtt running start')
@@ -77,8 +85,9 @@ class MqttConnector(threading.Thread, IResponseWriter, IPackageReceiver):
         if response.payload is not None:
             payload_length = {len(response.payload)}
 
-        self._logger.info(
-            f'MQTT try to send response with type {response.command_type} and payload length {payload_length}')
+        if response.command_type is not CommandType.Telemetry:
+            self._logger.info(
+                f'MQTT try to send response with type {response.command_type} and payload length {payload_length}')
         package = self._protocol_parser.create_package(response.command_type, response.payload)
         self.send(self._protocol_parser.serialize_package(package))
 
