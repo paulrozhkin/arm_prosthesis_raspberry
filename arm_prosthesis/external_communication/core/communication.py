@@ -27,7 +27,7 @@ from arm_prosthesis.services.settings_dao import SettingsDao
 
 class Communication:
     _logger = logging.getLogger('Main')
-    _default_telemetry_period = 5.0
+    _default_telemetry_period = 1.0
     _settings: GetSettingsDto
 
     def __init__(self, hand_controller: HandController, config: Config, gesture_repository: GestureRepository,
@@ -60,7 +60,7 @@ class Communication:
         while 1:
             if self._mqtt_connector and self._mqtt_connector.connected:
                 telemetry = self._telemetry_service.get_telemetry()
-                telemetry.telemetry_frequency = int(1 / self._telemetry_period)
+                telemetry.telemetry_frequency = int(1/self._telemetry_period)
                 telemetry_response = Response(CommandType.Telemetry, telemetry.serialize())
                 self._mqtt_connector.write_response(telemetry_response)
             time.sleep(self._telemetry_period)
@@ -120,6 +120,7 @@ class Communication:
             if request.command_type == CommandType.SetSettings:
                 self.handle_set_settings(request.payload)
                 request.response_writer.write_response(Response(CommandType.Ok, None))
+                return
 
             raise Exception(f'Command {request.command_type} not supporting')
         except:
