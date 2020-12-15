@@ -4,7 +4,9 @@ from queue import Queue
 
 from arm_prosthesis.models.gesture import Gesture
 from arm_prosthesis.models.gesture_action import GestureAction
+from arm_prosthesis.models.motor_positions import MotorPositions
 from arm_prosthesis.models.positions import Positions
+from arm_prosthesis.services.motor_driver_communication import MotorDriverCommunication
 
 
 class HandController:
@@ -15,8 +17,9 @@ class HandController:
     # Id жестов по умолчанию для команд execute by raw и set_positions
     _uuid_set_positions = '39d4dab8-e2b5-4751-9b1c-d09ecff94f30'
 
-    def __init__(self):
+    def __init__(self, driver_communication: MotorDriverCommunication):
         self._set_gesture_queue: 'Queue[Gesture]' = Queue()
+        self._driver_communication = driver_communication
         self._logger.info('Hand controller initialized')
 
     def run(self):
@@ -55,6 +58,12 @@ class HandController:
 
             action = actions_list[action_number]
             self._logger.debug(f'Get action with index {action_number}')
+
+            motor_positions = MotorPositions(action.little_finger_position, action.ring_finger_position,
+                                             action.middle_finger_position, action.index_finger_position,
+                                             action.thumb_finger_position, action.thumb_ejector_position)
+
+            self._driver_communication.set_new_positions(motor_positions)
 
             # if all actions in list were completed
             if number_of_actions == action_number + 1:

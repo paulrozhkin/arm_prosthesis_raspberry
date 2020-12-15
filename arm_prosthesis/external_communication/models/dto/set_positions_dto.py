@@ -36,6 +36,8 @@ class SetPositionsDto(EntityDto):
 
     def deserialize(self, byte_array: bytes):
         position_protobuf = SetPositions()
+        if byte_array is None:
+            byte_array = bytes()
         position_protobuf.ParseFromString(byte_array)
 
         self._little_finger_position = position_protobuf.little_finger_position

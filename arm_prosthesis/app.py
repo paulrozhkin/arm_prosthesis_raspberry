@@ -10,6 +10,7 @@ from arm_prosthesis.external_communication.services.telemetry_service import Tel
 from arm_prosthesis.hand_controller import HandController
 from arm_prosthesis.config.configuration import load_config
 from arm_prosthesis.services.gesture_repository import GestureRepository
+from arm_prosthesis.services.motor_driver_communication import MotorDriverCommunication
 from arm_prosthesis.services.settings_dao import SettingsDao
 
 
@@ -24,18 +25,21 @@ class App:
         self._settings_dao = SettingsDao(self._config.settings_path)
         self._logger.info(f'Prosthesis settings:\n{self._settings_dao.get()}')
 
-        self._hand = HandController()
+        self._driver_communication = MotorDriverCommunication()
+        self._hand = HandController(self._driver_communication)
         self._gesture_repository = GestureRepository(self._config.gestures_path)
         self._telemetry_service = TelemetryService()
         self._communication = Communication(self._hand, self._config, self._gesture_repository, self._telemetry_service,
                                             self._settings_dao)
 
+        self._driver_communication_thread = threading.Thread(target=self._driver_communication.run)
         self._communication_thread = threading.Thread(target=self._communication.run)
         self._hand_controller_thread = threading.Thread(target=self._hand.run)
 
     def run(self):
         self._logger.info('App start init workers.')
 
+        self._driver_communication_thread.start()
         self._communication_thread.start()
         self._hand_controller_thread.start()
 
