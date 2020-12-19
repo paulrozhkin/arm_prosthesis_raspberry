@@ -1,4 +1,5 @@
 import logging
+import os
 import threading
 import time
 import traceback
@@ -201,4 +202,9 @@ class Communication:
                 self._telemetry_period = 1 / settings_dto.telemetry_frequency
 
         self._settings_dao.save(settings_dto)
+
+        if settings_dto.power_off:
+            logging.info(f'Power off')
+            os.system("shutdown now -h")
+
         self._settings = self._settings_dao.get()

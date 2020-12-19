@@ -12,6 +12,7 @@ class SetSettingsDto(EntityDto):
         self._enable_display: bool = False
         self._enable_gyro: bool = False
         self._enable_driver: bool = False
+        self._power_off: bool = False
 
     @property
     def type_work(self) -> ModeType:
@@ -37,6 +38,10 @@ class SetSettingsDto(EntityDto):
     def enable_driver(self) -> bool:
         return self._enable_driver
 
+    @property
+    def power_off(self) -> bool:
+        return self._power_off
+
     def deserialize(self, byte_array: bytes):
         set_settings_protobuf = SetSettings()
         set_settings_protobuf.ParseFromString(byte_array)
@@ -46,6 +51,7 @@ class SetSettingsDto(EntityDto):
         self._enable_display = set_settings_protobuf.enable_display
         self._enable_gyro = set_settings_protobuf.enable_gyro
         self._enable_driver = set_settings_protobuf.enable_driver
+        self._power_off = set_settings_protobuf.power_off
 
     def serialize(self) -> bytes:
         raise NotImplementedError()
