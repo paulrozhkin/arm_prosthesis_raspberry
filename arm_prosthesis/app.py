@@ -32,10 +32,12 @@ class App:
         self._telemetry_service = TelemetryService(self._gesture_repository, self._driver_communication)
         self._communication = Communication(self._hand, self._config, self._gesture_repository, self._telemetry_service,
                                             self._settings_dao)
+        self._adc_reader = AdcReader()
 
         self._driver_communication_thread = threading.Thread(target=self._driver_communication.run)
         self._communication_thread = threading.Thread(target=self._communication.run)
         self._hand_controller_thread = threading.Thread(target=self._hand.run)
+        self._adc_reader_thread = threading.Thread(target=self._adc_reader.run)
 
     def run(self):
         self._logger.info('App start init workers.')
@@ -43,6 +45,7 @@ class App:
         self._driver_communication_thread.start()
         self._communication_thread.start()
         self._hand_controller_thread.start()
+        self._adc_reader_thread.start()
 
         self._logger.info('App started.')
         self._hand_controller_thread.join()
