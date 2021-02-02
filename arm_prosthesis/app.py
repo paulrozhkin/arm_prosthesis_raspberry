@@ -9,6 +9,7 @@ from arm_prosthesis.external_communication.core.communication import Communicati
 from arm_prosthesis.external_communication.services.telemetry_service import TelemetryService
 from arm_prosthesis.hand_controller import HandController
 from arm_prosthesis.config.configuration import load_config
+from arm_prosthesis.services.adc_reader import AdcReader
 from arm_prosthesis.services.gesture_repository import GestureRepository
 from arm_prosthesis.services.motor_driver_communication import MotorDriverCommunication
 from arm_prosthesis.services.settings_dao import SettingsDao
@@ -28,7 +29,7 @@ class App:
         self._driver_communication = MotorDriverCommunication()
         self._hand = HandController(self._driver_communication)
         self._gesture_repository = GestureRepository(self._config.gestures_path)
-        self._telemetry_service = TelemetryService()
+        self._telemetry_service = TelemetryService(self._gesture_repository, self._driver_communication)
         self._communication = Communication(self._hand, self._config, self._gesture_repository, self._telemetry_service,
                                             self._settings_dao)
 
@@ -45,7 +46,7 @@ class App:
 
         self._logger.info('App started.')
         self._hand_controller_thread.join()
-        self._logger.info('App started.')
+        self._logger.info('App closed.')
 
     def init_logger(self):
         session_name = time.strftime("%Y_%m_%d_%H_%M_%S")
@@ -62,7 +63,7 @@ class App:
             handlers.append(file_handler)
 
         logging.basicConfig(
-            level=logging.DEBUG,
+            level=logging.INFO,
             format='%(asctime)s %(levelname)-8s [%(threadName)s] [%(filename)s:%(lineno)d] %(message)s',
             handlers=handlers
         )
