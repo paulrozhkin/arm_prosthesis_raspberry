@@ -7,6 +7,7 @@ from queue import Queue
 
 from arm_prosthesis.config.configuration import Config
 from arm_prosthesis.external_communication.core.connectors.mqtt_connector import MqttConnector
+from arm_prosthesis.external_communication.core.connectors.rfcc_connector import RFCCConnector
 from arm_prosthesis.external_communication.models.command_type import CommandType
 from arm_prosthesis.external_communication.models.dto.delete_gesture_dto import DeleteGestureDto
 from arm_prosthesis.external_communication.models.dto.get_gestures_dto import GetGesturesDto
@@ -16,6 +17,8 @@ from arm_prosthesis.external_communication.models.dto.perform_gesture_by_raw_dto
 from arm_prosthesis.external_communication.models.dto.save_gesture_dto import SaveGestureDto
 from arm_prosthesis.external_communication.models.dto.set_positions_dto import SetPositionsDto
 from arm_prosthesis.external_communication.models.dto.set_settings_dto import SetSettingsDto
+from arm_prosthesis.external_communication.models.dto.telemetry_dto import TelemetryDto
+from arm_prosthesis.external_communication.models.dto.update_last_time_sync_dto import UpdateLastTimeSyncDto
 from arm_prosthesis.external_communication.models.request import Request
 from arm_prosthesis.external_communication.models.response import Response
 from arm_prosthesis.external_communication.services.dto_to_entity_converter import DtoToEntityConverter
@@ -30,6 +33,8 @@ class Communication:
     _logger = logging.getLogger('Main')
     _default_telemetry_period = 1.0
     _settings: GetSettingsDto
+    _mqtt_connector: MqttConnector = None
+    _rfcc_connector: RFCCConnector = None
 
     def __init__(self, hand_controller: HandController, config: Config, gesture_repository: GestureRepository,
                  telemetry_service: TelemetryService, settings_dao: SettingsDao):
@@ -49,7 +54,7 @@ class Communication:
             self._mqtt_connector = MqttConnector(self._config, self.request_queue)
 
         if self._config.rfcomm_enabled:
-            raise NotImplementedError
+            self._rfcc_connector = RFCCConnector(self._config, self.request_queue)
 
         self._logger.info('Communication initialized')
 
@@ -57,13 +62,24 @@ class Communication:
     def request_queue(self) -> 'Queue[Request]':
         return self._request_queue
 
+    def _get_telemetry(self) -> TelemetryDto:
+        telemetry = self._telemetry_service.get_telemetry()
+        telemetry.telemetry_frequency = int(1 / self._telemetry_period)
+        return telemetry
+
     def _send_telemetry(self):
         while 1:
-            if self._mqtt_connector and self._mqtt_connector.connected:
+            if (self._mqtt_connector and self._mqtt_connector.connected)\
+                    or (self._rfcc_connector and self._rfcc_connector.connected):
                 telemetry = self._telemetry_service.get_telemetry()
                 telemetry.telemetry_frequency = int(1/self._telemetry_period)
                 telemetry_response = Response(CommandType.Telemetry, telemetry.serialize())
-                self._mqtt_connector.write_response(telemetry_response)
+
+                if self._mqtt_connector and self._mqtt_connector.connected:
+                    self._mqtt_connector.write_response(telemetry_response)
+
+                if self._rfcc_connector and self._rfcc_connector.connected:
+                    self._rfcc_connector.write_response(telemetry_response)
             time.sleep(self._telemetry_period)
 
     def run(self):
@@ -71,6 +87,9 @@ class Communication:
 
         if self._mqtt_connector:
             self._mqtt_connector.start()
+
+        if self._rfcc_connector:
+            self._rfcc_connector.start()
 
         self._telemetry_thread.start()
 
@@ -123,6 +142,11 @@ class Communication:
                 request.response_writer.write_response(Response(CommandType.Ok, None))
                 return
 
+            if request.command_type == CommandType.UpdateLastTimeSync:
+                self.handle_update_last_time_sync(request.payload)
+                request.response_writer.write_response(Response(CommandType.Ok, None))
+                return
+
             raise Exception(f'Command {request.command_type} not supporting')
         except:
             e = traceback.format_exc()
@@ -153,6 +177,13 @@ class Communication:
         delete_gesture_dto.deserialize(payload)
 
         self._gesture_repository.remove_gesture(delete_gesture_dto.time_sync, delete_gesture_dto.id)
+
+    def handle_update_last_time_sync(self, payload: bytes):
+        logging.info(f'Start handling update last time sync')
+
+        update_last_time_sync_dto = UpdateLastTimeSyncDto()
+        update_last_time_sync_dto.deserialize(payload)
+        self._gesture_repository.update_time_sync(update_last_time_sync_dto.last_time_sync)
 
     def handle_perform_gesture_by_id(self, payload: bytes):
         logging.info(f'Start handling perform gesture by id')
@@ -208,3 +239,5 @@ class Communication:
             os.system("shutdown now -h")
 
         self._settings = self._settings_dao.get()
+
+
