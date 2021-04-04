@@ -9,7 +9,7 @@ from arm_prosthesis.external_communication.core.communication import Communicati
 from arm_prosthesis.external_communication.services.telemetry_service import TelemetryService
 from arm_prosthesis.hand_controller import HandController
 from arm_prosthesis.config.configuration import load_config
-from arm_prosthesis.services.adc_reader import AdcReader
+from arm_prosthesis.services.myoelectronics_service import MyoelectronicsService
 from arm_prosthesis.services.gesture_repository import GestureRepository
 from arm_prosthesis.services.motor_driver_communication import MotorDriverCommunication
 from arm_prosthesis.services.settings_dao import SettingsDao
@@ -32,7 +32,7 @@ class App:
         self._telemetry_service = TelemetryService(self._gesture_repository, self._driver_communication)
         self._communication = Communication(self._hand, self._config, self._gesture_repository, self._telemetry_service,
                                             self._settings_dao)
-        self._adc_reader = AdcReader()
+        self._adc_reader = MyoelectronicsService()
 
         self._driver_communication_thread = threading.Thread(target=self._driver_communication.run)
         self._communication_thread = threading.Thread(target=self._communication.run)
