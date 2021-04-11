@@ -31,7 +31,7 @@ class MyoelectronicsRecorder:
             try:
                 # start_time = time.time()
                 value = self._sensor.get_value()
-                # print(value)
+                print(value)
                 records.append({'tick': tick, 'adc': value})
                 tick += 1
                 # print('| {0:>6} |'.format(values))
@@ -47,7 +47,7 @@ class MyoelectronicsRecorder:
         print("Session start writing")
         with open(self._path_to_record_file_csv, 'w', newline='') as csv_file:
             fieldnames = ['tick', 'adc']
-            writer = csv.DictWriter(csv_file, fieldnames=fieldnames)
+            writer = csv.DictWriter(csv_file, fieldnames=fieldnames, delimiter=';')
 
             writer.writeheader()
 
