@@ -43,14 +43,14 @@ class GestureRepository:
             gesture_file.write(new_gesture.serialize())
 
         self._gestures_dictionary[new_gesture.id] = new_gesture
-        self._update_time_sync(current_time)
+        self.update_time_sync(current_time)
 
     def remove_gesture(self, current_time: int, gesture_id: str):
         self._logger.info(f'Remove gesture {gesture_id}')
         os.remove(os.path.join(self._path_to_gestures, gesture_id + self._gestures_file_extension))
 
         del self._gestures_dictionary[gesture_id]
-        self._update_time_sync(current_time)
+        self.update_time_sync(current_time)
 
     def get_gesture_by_id(self, gesture_id: str) -> GestureDto:
         self._logger.info(f'Get gesture {gesture_id}')
@@ -64,7 +64,7 @@ class GestureRepository:
     def last_time_sync(self) -> int:
         return self._common_info['last_time_sync']
 
-    def _update_time_sync(self, new_time_sync):
+    def update_time_sync(self, new_time_sync):
         self._logger.info(f'Update last time sync to new value: {new_time_sync}')
 
         self._common_info['last_time_sync'] = new_time_sync
@@ -96,4 +96,4 @@ class GestureRepository:
         self._logger.info('Start create new gestures directory')
         os.makedirs(self._path_to_gestures)
 
-        self._update_time_sync(0)
+        self.update_time_sync(0)

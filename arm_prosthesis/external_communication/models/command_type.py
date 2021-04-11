@@ -13,4 +13,5 @@ class CommandType(Enum):
     PerformGestureId = 9
     PerformGestureRaw = 10
     SetPositions = 11
+    UpdateLastTimeSync = 12
 
