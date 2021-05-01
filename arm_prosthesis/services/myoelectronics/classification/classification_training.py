@@ -54,35 +54,6 @@ class ClassificationTraining:
         with open('knn_model', 'wb') as knn_file:
             pickle.dump(knn_model, knn_file)
 
-        # ClassificationTraining._plot_model(knn_model, features_train, output_train)
-
-    @staticmethod
-    def _plot_model(knn_model, input_model, output_model):
-        pass
-        '''
-        x = data[['X', 'Y']].values
-        y = data['class'].astype(int).values
-        plot_decision_regions(x, y, clf=knn_model, legend=2)
-
-        plt.xlabel('Features')
-        plt.ylabel('Output')
-        plt.title('KNN model with K = 2')
-        plt.show()
-
-        return
-
-        predicts = knn_model.predict(input_model)
-        cmap = sns.cubehelix_palette(as_cmap=True)
-        f, ax = plt.subplots()
-
-        points = ax.scatter(
-            input_model[:, 0], input_model[:, 1], c=predicts, s=50, cmap=cmap
-        )
-
-        f.colorbar(points)
-        plt.show()
-        '''
-
     @staticmethod
     def calculate_rmse(knn_model, input_model, output_model):
         train_predicts = knn_model.predict(input_model)
@@ -104,7 +75,7 @@ class ClassificationTraining:
 
 
 if __name__ == '__main__':
-    path_to_gestures = 'C:/DATA/MyProject/BigProjects/ProjectHand/hand/arm_prosthesis_raspberry/data/gestures/training/'
+    path_to_gestures = '//home/pi/arm-prosthesis/data/gestures/training/'
 
     tagged_gestures = {}
     for gesture_id in gestures_signals_names:
