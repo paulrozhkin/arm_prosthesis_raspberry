@@ -1,8 +1,6 @@
-import logging
+import csv
 import time
 from os import path
-
-import csv
 
 from arm_prosthesis.services.myoelectronics.myoelectronics_sensor import MyoelectronicsSensor
 

@@ -17,7 +17,7 @@ class MotorDriverCommunication:
         self._set_positions_queue: 'Queue[MotorPositions]' = Queue()
         self._empty_payload = [0xFF] * 9
         self._telemetry_request = [0x00] * 9
-        self._telemetry_request[8] = self._get_crc8_for_request(self._telemetry_request)
+        self._telemetry_request[8] = int.from_bytes(self._get_crc8_for_request(self._telemetry_request), "big")
         self._telemetry = DriverTelemetry(0, 0, 0, 0, 0, 0, 0)
 
     @property
