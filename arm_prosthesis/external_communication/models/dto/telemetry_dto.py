@@ -5,7 +5,6 @@ from telemetry_pb2 import Telemetry
 
 class TelemetryDto(EntityDto):
     def __init__(self):
-        self._telemetry_frequency: int = 0
         self._emg_status: enums = enums.MODULE_STATUS_CONNECTION_ERROR
         self._display_status: enums = enums.MODULE_STATUS_CONNECTION_ERROR
         self._gyro_status: enums = enums.MODULE_STATUS_CONNECTION_ERROR
@@ -19,14 +18,6 @@ class TelemetryDto(EntityDto):
         self._ring_finger_position: int = 0
         self._little_finger_position: int = 0
         self._thumb_finger_position: int = 0
-
-    @property
-    def telemetry_frequency(self) -> int:
-        return self._telemetry_frequency
-
-    @telemetry_frequency.setter
-    def telemetry_frequency(self, value: int):
-        self._telemetry_frequency = value
 
     @property
     def emg_status(self) -> enums:
@@ -133,8 +124,11 @@ class TelemetryDto(EntityDto):
         self._thumb_finger_position = value
 
     def serialize(self) -> bytes:
+        telemetry_protobuf = self.convert_to_protobuf_gesture()
+        return telemetry_protobuf.SerializeToString()
+
+    def convert_to_protobuf_gesture(self) -> Telemetry:
         telemetry_protobuf = Telemetry()
-        telemetry_protobuf.telemetry_frequency = self.telemetry_frequency
         telemetry_protobuf.emg_status = self.emg_status
         telemetry_protobuf.display_status = self.display_status
         telemetry_protobuf.gyro_status = self.gyro_status
@@ -149,8 +143,7 @@ class TelemetryDto(EntityDto):
         telemetry_protobuf.little_finger_position = self.little_finger_position
         telemetry_protobuf.thumb_finger_position = self.thumb_finger_position
 
-        return telemetry_protobuf.SerializeToString()
+        return telemetry_protobuf
 
     def deserialize(self, byte_array: bytes):
         raise NotImplementedError()
-
