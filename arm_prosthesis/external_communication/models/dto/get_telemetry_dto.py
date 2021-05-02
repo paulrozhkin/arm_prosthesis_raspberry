@@ -1,9 +1,5 @@
-from typing import List
-
 from arm_prosthesis.external_communication.models.dto.entity_dto import EntityDto
-from arm_prosthesis.external_communication.models.dto.gesture_dto import GestureDto
 from arm_prosthesis.external_communication.models.dto.telemetry_dto import TelemetryDto
-from gestures_pb2 import GetGestures
 from telemetry_pb2 import GetTelemetry
 
 

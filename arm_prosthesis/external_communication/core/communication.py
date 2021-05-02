@@ -1,6 +1,5 @@
 import logging
 import os
-import threading
 import time
 import traceback
 from queue import Queue
@@ -12,41 +11,52 @@ from arm_prosthesis.external_communication.models.command_type import CommandTyp
 from arm_prosthesis.external_communication.models.dto.delete_gesture_dto import DeleteGestureDto
 from arm_prosthesis.external_communication.models.dto.get_gestures_dto import GetGesturesDto
 from arm_prosthesis.external_communication.models.dto.get_settings_dto import GetSettingsDto
+from arm_prosthesis.external_communication.models.dto.get_telemetry_dto import GetTelemetryDto
 from arm_prosthesis.external_communication.models.dto.perform_gesture_by_id_dto import PerformGestureByIdDto
 from arm_prosthesis.external_communication.models.dto.perform_gesture_by_raw_dto import PerformGestureRawDto
 from arm_prosthesis.external_communication.models.dto.save_gesture_dto import SaveGestureDto
 from arm_prosthesis.external_communication.models.dto.set_positions_dto import SetPositionsDto
 from arm_prosthesis.external_communication.models.dto.set_settings_dto import SetSettingsDto
-from arm_prosthesis.external_communication.models.dto.telemetry_dto import TelemetryDto
+from arm_prosthesis.external_communication.models.dto.start_telemetry_dto import StartTelemetryDto
 from arm_prosthesis.external_communication.models.dto.update_last_time_sync_dto import UpdateLastTimeSyncDto
 from arm_prosthesis.external_communication.models.request import Request
 from arm_prosthesis.external_communication.models.response import Response
 from arm_prosthesis.external_communication.services.dto_to_entity_converter import DtoToEntityConverter
+from arm_prosthesis.services.motor_driver_communication import ActuatorControllerService
+from arm_prosthesis.services.myoelectronics_service import MyoelectronicsService
+from arm_prosthesis.utils.stoppable_thread import StoppableThread
 from arm_prosthesis.external_communication.services.telemetry_service import TelemetryService
 from arm_prosthesis.hand_controller import HandController
 from arm_prosthesis.models.positions import Positions
 from arm_prosthesis.services.gesture_repository import GestureRepository
 from arm_prosthesis.services.settings_dao import SettingsDao
+from errors_pb2 import Error
 
 
 class Communication:
     _logger = logging.getLogger('Main')
-    _default_telemetry_period = 1.0
     _settings: GetSettingsDto
+    _telemetry_thread: StoppableThread = None
     _mqtt_connector: MqttConnector = None
     _rfcc_connector: RFCCConnector = None
+    _interval_100_hz_in_ms = 10
+    _interval_2_days_in_ms = 172800000
 
-    def __init__(self, hand_controller: HandController, config: Config, gesture_repository: GestureRepository,
-                 telemetry_service: TelemetryService, settings_dao: SettingsDao):
+    def __init__(self, hand_controller: HandController,
+                 config: Config,
+                 gesture_repository: GestureRepository,
+                 telemetry_service: TelemetryService,
+                 settings_dao: SettingsDao,
+                 myoelectronics_service: MyoelectronicsService,
+                 driver_communication: ActuatorControllerService):
         self._gesture_repository = gesture_repository
         self._settings_dao = settings_dao
         self._hand_controller = hand_controller
         self._config = config
         self._telemetry_service = telemetry_service
+        self._myoelectronics_service = myoelectronics_service
+        self._driver_communication = driver_communication
         self._settings = self._settings_dao.get()
-
-        self._telemetry_period = self._default_telemetry_period
-        self._telemetry_thread = threading.Thread(target=self._send_telemetry)
 
         self._request_queue: 'Queue[Request]' = Queue()
 
@@ -62,17 +72,12 @@ class Communication:
     def request_queue(self) -> 'Queue[Request]':
         return self._request_queue
 
-    def _get_telemetry(self) -> TelemetryDto:
-        telemetry = self._telemetry_service.get_telemetry()
-        telemetry.telemetry_frequency = int(1 / self._telemetry_period)
-        return telemetry
-
-    def _send_telemetry(self):
+    def _send_telemetry(self, interval_in_seconds):
         while 1:
-            if (self._mqtt_connector and self._mqtt_connector.connected)\
+            if (self._mqtt_connector and self._mqtt_connector.connected) \
                     or (self._rfcc_connector and self._rfcc_connector.connected):
+
                 telemetry = self._telemetry_service.get_telemetry()
-                telemetry.telemetry_frequency = int(1/self._telemetry_period)
                 telemetry_response = Response(CommandType.Telemetry, telemetry.serialize())
 
                 if self._mqtt_connector and self._mqtt_connector.connected:
@@ -80,7 +85,7 @@ class Communication:
 
                 if self._rfcc_connector and self._rfcc_connector.connected:
                     self._rfcc_connector.write_response(telemetry_response)
-            time.sleep(self._telemetry_period)
+            time.sleep(interval_in_seconds)
 
     def run(self):
         self._logger.info('Communication running')
@@ -90,8 +95,6 @@ class Communication:
 
         if self._rfcc_connector:
             self._rfcc_connector.start()
-
-        self._telemetry_thread.start()
 
         while 1:
             self._logger.info('Wait new request')
@@ -147,11 +150,35 @@ class Communication:
                 request.response_writer.write_response(Response(CommandType.Ok, None))
                 return
 
+            if request.command_type == CommandType.GetTelemetry:
+                get_telemetry_dto = self.handle_get_telemetry()
+                request.response_writer.write_response(
+                    Response(CommandType.GetTelemetry, get_telemetry_dto.serialize()))
+                return
+
+            if request.command_type == CommandType.StartTelemetry:
+                self.handle_start_telemetry(request.payload)
+                request.response_writer.write_response(Response(CommandType.Ok, None))
+                return
+
+            if request.command_type == CommandType.StopTelemetry:
+                self.handle_stop_telemetry()
+                request.response_writer.write_response(Response(CommandType.Ok, None))
+                return
+
+            if request.command_type == CommandType.GetMioPatterns:
+                raise NotImplementedError
+
+            if request.command_type == CommandType.SetMioPatterns:
+                raise NotImplementedError
+
             raise Exception(f'Command {request.command_type} not supporting')
         except:
             e = traceback.format_exc()
             logging.error(f'Error request handling: {e}')
-            error_response = Response(CommandType.Error)
+            error = Error()
+            error.message = e
+            error_response = Response(CommandType.Error, error.SerializeToString())
             request.response_writer.write_response(error_response)
 
     def handle_set_positions_request(self, payload: bytes):
@@ -224,20 +251,50 @@ class Communication:
         settings_dto = SetSettingsDto()
         settings_dto.deserialize(payload)
 
-        if settings_dto.telemetry_frequency <= 1:
-            self._telemetry_period = 1.0
-        else:
-            if settings_dto.telemetry_frequency >= 20:
-                self._telemetry_period = 0.05
-            else:
-                self._telemetry_period = 1 / settings_dto.telemetry_frequency
-
         self._settings_dao.save(settings_dto)
 
         if settings_dto.power_off:
             logging.info(f'Power off')
             os.system("shutdown now -h")
+            exit()
+
+        old_emg = self._settings.enable_emg
 
         self._settings = self._settings_dao.get()
 
+        if self._settings.enable_emg != old_emg:
+            if self._settings.enable_emg:
+                self._myoelectronics_service.start()
+            else:
+                self._myoelectronics_service.stop()
 
+    def handle_start_telemetry(self, payload):
+        if self._telemetry_thread is not None:
+            raise Exception('Telemetry already started')
+
+        start_telemetry_dto = StartTelemetryDto()
+        start_telemetry_dto.deserialize(payload)
+
+        if start_telemetry_dto.interval_ms < self._interval_100_hz_in_ms \
+                or start_telemetry_dto.interval_ms > self._interval_2_days_in_ms:
+            raise Exception('Incorrect interval')
+
+        interval_in_seconds = start_telemetry_dto.interval_ms / 1000
+
+        self._driver_communication.enable_telemetry()
+        self._telemetry_thread = StoppableThread(target=self._send_telemetry, timeout=interval_in_seconds)
+        self._telemetry_thread.start()
+
+    def handle_get_telemetry(self) -> GetTelemetryDto:
+        get_telemetry_dto = GetTelemetryDto()
+        telemetry = self._telemetry_service.get_telemetry()
+        get_telemetry_dto.telemetry = telemetry
+        return get_telemetry_dto
+
+    def handle_stop_telemetry(self):
+        if self._telemetry_thread is None:
+            raise Exception('Telemetry not started')
+
+        self._driver_communication.disable_telemetry()
+        self._telemetry_thread.stop()
+        self._telemetry_thread = None

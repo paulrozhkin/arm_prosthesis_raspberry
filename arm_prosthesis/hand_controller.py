@@ -6,18 +6,16 @@ from arm_prosthesis.models.gesture import Gesture
 from arm_prosthesis.models.gesture_action import GestureAction
 from arm_prosthesis.models.motor_positions import MotorPositions
 from arm_prosthesis.models.positions import Positions
-from arm_prosthesis.services.motor_driver_communication import MotorDriverCommunication
+from arm_prosthesis.services.motor_driver_communication import ActuatorControllerService
 
 
 class HandController:
-    # EC:56:23:F3:91:FC - Honor 10 Lite
-    # 98:D3:71:F9:7A:02 - HCF97A02
     _logger = logging.getLogger('Main')
 
     # Id жестов по умолчанию для команд execute by raw и set_positions
     _uuid_set_positions = '39d4dab8-e2b5-4751-9b1c-d09ecff94f30'
 
-    def __init__(self, driver_communication: MotorDriverCommunication):
+    def __init__(self, driver_communication: ActuatorControllerService):
         self._set_gesture_queue: 'Queue[Gesture]' = Queue()
         self._driver_communication = driver_communication
         self._logger.info('Hand controller initialized')
