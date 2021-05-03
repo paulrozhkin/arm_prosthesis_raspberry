@@ -11,9 +11,17 @@ class MioPatternDto(EntityDto):
     def gesture_id(self) -> str:
         return self._gesture_id
 
+    @gesture_id.setter
+    def gesture_id(self, value: str):
+        self._gesture_id = value
+
     @property
     def pattern(self) -> int:
         return self._pattern
+
+    @pattern.setter
+    def pattern(self, value: int):
+        self._pattern = value
 
     def create_from_protobuf_pattern(self, mio_pattern_proto: MioPattern):
         self._pattern = mio_pattern_proto.pattern

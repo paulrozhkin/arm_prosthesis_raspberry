@@ -18,7 +18,12 @@ class SetMioPatternsDto(EntityDto):
         self._patterns_dto = value
 
     def serialize(self) -> bytes:
-        raise NotImplementedError
+        set_mio_patterns_protobuf = SetMioPatterns()
+
+        for pattern_dto in self._patterns_dto:
+            set_mio_patterns_protobuf.patterns.append(pattern_dto.convert_to_protobuf_pattern())
+
+        return set_mio_patterns_protobuf.SerializeToString()
 
     def deserialize(self, byte_array: bytes):
         set_mio_patterns_protobuf = SetMioPatterns()
@@ -27,4 +32,5 @@ class SetMioPatternsDto(EntityDto):
         self.patterns_dto = []
         for pattern_protobuf in set_mio_patterns_protobuf.patterns:
             pattern_dto = MioPatternDto()
-            self.patterns_dto.append(pattern_dto.create_from_protobuf_pattern(pattern_protobuf))
+            pattern_dto.create_from_protobuf_pattern(pattern_protobuf)
+            self.patterns_dto.append(pattern_dto)

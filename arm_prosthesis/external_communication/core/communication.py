@@ -10,11 +10,13 @@ from arm_prosthesis.external_communication.core.connectors.rfcc_connector import
 from arm_prosthesis.external_communication.models.command_type import CommandType
 from arm_prosthesis.external_communication.models.dto.delete_gesture_dto import DeleteGestureDto
 from arm_prosthesis.external_communication.models.dto.get_gestures_dto import GetGesturesDto
+from arm_prosthesis.external_communication.models.dto.get_mio_patterns_dto import GetMioPatternsDto
 from arm_prosthesis.external_communication.models.dto.get_settings_dto import GetSettingsDto
 from arm_prosthesis.external_communication.models.dto.get_telemetry_dto import GetTelemetryDto
 from arm_prosthesis.external_communication.models.dto.perform_gesture_by_id_dto import PerformGestureByIdDto
 from arm_prosthesis.external_communication.models.dto.perform_gesture_by_raw_dto import PerformGestureRawDto
 from arm_prosthesis.external_communication.models.dto.save_gesture_dto import SaveGestureDto
+from arm_prosthesis.external_communication.models.dto.set_mio_patterns_dto import SetMioPatternsDto
 from arm_prosthesis.external_communication.models.dto.set_positions_dto import SetPositionsDto
 from arm_prosthesis.external_communication.models.dto.set_settings_dto import SetSettingsDto
 from arm_prosthesis.external_communication.models.dto.start_telemetry_dto import StartTelemetryDto
@@ -22,6 +24,7 @@ from arm_prosthesis.external_communication.models.dto.update_last_time_sync_dto 
 from arm_prosthesis.external_communication.models.request import Request
 from arm_prosthesis.external_communication.models.response import Response
 from arm_prosthesis.external_communication.services.dto_to_entity_converter import DtoToEntityConverter
+from arm_prosthesis.services.mio_patterns_service import MioPatternsService
 from arm_prosthesis.services.motor_driver_communication import ActuatorControllerService
 from arm_prosthesis.services.myoelectronics_service import MyoelectronicsService
 from arm_prosthesis.utils.stoppable_thread import StoppableThread
@@ -48,7 +51,8 @@ class Communication:
                  telemetry_service: TelemetryService,
                  settings_dao: SettingsDao,
                  myoelectronics_service: MyoelectronicsService,
-                 driver_communication: ActuatorControllerService):
+                 driver_communication: ActuatorControllerService,
+                 mio_patterns_service: MioPatternsService):
         self._gesture_repository = gesture_repository
         self._settings_dao = settings_dao
         self._hand_controller = hand_controller
@@ -57,6 +61,7 @@ class Communication:
         self._myoelectronics_service = myoelectronics_service
         self._driver_communication = driver_communication
         self._settings = self._settings_dao.get()
+        self._mio_patterns_service = mio_patterns_service
 
         self._request_queue: 'Queue[Request]' = Queue()
 
@@ -165,10 +170,15 @@ class Communication:
                 return
 
             if request.command_type == CommandType.GetMioPatterns:
-                raise NotImplementedError
+                get_mio_patterns_dto = self.handle_get_mio_patterns()
+                request.response_writer.write_response(
+                    Response(CommandType.GetTelemetry, get_mio_patterns_dto.serialize()))
+                return
 
             if request.command_type == CommandType.SetMioPatterns:
-                raise NotImplementedError
+                self.handle_set_mio_patterns(request.payload)
+                request.response_writer.write_response(Response(CommandType.Ok, None))
+                return
 
             raise Exception(f'Command {request.command_type} not supporting')
         except:
@@ -267,6 +277,8 @@ class Communication:
                 self._myoelectronics_service.stop()
 
     def handle_start_telemetry(self, payload):
+        logging.info(f'Start handling start telemetry')
+
         if self._telemetry_thread is not None:
             raise Exception('Telemetry already started')
 
@@ -284,15 +296,37 @@ class Communication:
         self._telemetry_thread.start()
 
     def handle_get_telemetry(self) -> GetTelemetryDto:
+        logging.info(f'Start handling get telemetry')
+
         get_telemetry_dto = GetTelemetryDto()
         telemetry = self._telemetry_service.get_telemetry()
         get_telemetry_dto.telemetry = telemetry
         return get_telemetry_dto
 
     def handle_stop_telemetry(self):
+        logging.info(f'Start handling stop telemetry')
+
         if self._telemetry_thread is None:
             raise Exception('Telemetry not started')
 
         self._driver_communication.disable_telemetry()
         self._telemetry_thread.stop()
         self._telemetry_thread = None
+
+    def handle_get_mio_patterns(self) -> GetMioPatternsDto:
+        logging.info(f'Start handling get mio patterns')
+
+        get_mio_patterns_dto = GetMioPatternsDto()
+        mio_patterns_dto = self._mio_patterns_service.get_mio_patterns()
+        for mio_pattern_dto in mio_patterns_dto:
+            get_mio_patterns_dto.patterns_dto.append(mio_pattern_dto)
+
+        return get_mio_patterns_dto
+
+    def handle_set_mio_patterns(self, payload):
+        logging.info(f'Start handling set mio patterns')
+
+        set_mio_patterns_dto = SetMioPatternsDto()
+        set_mio_patterns_dto.deserialize(payload)
+
+        self._mio_patterns_service.update_mio_patterns(set_mio_patterns_dto.patterns_dto)
