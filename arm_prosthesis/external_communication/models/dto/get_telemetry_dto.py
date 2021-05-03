@@ -17,7 +17,8 @@ class GetTelemetryDto(EntityDto):
 
     def serialize(self) -> bytes:
         get_telemetry_protobuf = GetTelemetry()
-        get_telemetry_protobuf.telemetry = self.telemetry.convert_to_protobuf_gesture()
+        telemetry_protobuf = self.telemetry.convert_to_protobuf_gesture()
+        get_telemetry_protobuf.telemetry.CopyFrom(telemetry_protobuf)
 
         return get_telemetry_protobuf.SerializeToString()
 

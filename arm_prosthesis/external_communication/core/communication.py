@@ -72,20 +72,18 @@ class Communication:
     def request_queue(self) -> 'Queue[Request]':
         return self._request_queue
 
-    def _send_telemetry(self, interval_in_seconds):
-        while 1:
-            if (self._mqtt_connector and self._mqtt_connector.connected) \
-                    or (self._rfcc_connector and self._rfcc_connector.connected):
+    def _send_telemetry(self):
+        if (self._mqtt_connector and self._mqtt_connector.connected) \
+                or (self._rfcc_connector and self._rfcc_connector.connected):
 
-                telemetry = self._telemetry_service.get_telemetry()
-                telemetry_response = Response(CommandType.Telemetry, telemetry.serialize())
+            telemetry = self._telemetry_service.get_telemetry()
+            telemetry_response = Response(CommandType.Telemetry, telemetry.serialize())
 
-                if self._mqtt_connector and self._mqtt_connector.connected:
-                    self._mqtt_connector.write_response(telemetry_response)
+            if self._mqtt_connector and self._mqtt_connector.connected:
+                self._mqtt_connector.write_response(telemetry_response)
 
-                if self._rfcc_connector and self._rfcc_connector.connected:
-                    self._rfcc_connector.write_response(telemetry_response)
-            time.sleep(interval_in_seconds)
+            if self._rfcc_connector and self._rfcc_connector.connected:
+                self._rfcc_connector.write_response(telemetry_response)
 
     def run(self):
         self._logger.info('Communication running')
