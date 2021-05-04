@@ -31,7 +31,7 @@ class App:
         self._hand = HandController(self._driver_communication)
         self._gesture_repository = GestureRepository(self._config.gestures_path)
         self._telemetry_service = TelemetryService(self._gesture_repository, self._driver_communication)
-        self._myoelectronics_service = MyoelectronicsService()
+        self._myoelectronics_service = MyoelectronicsService(self._config.model_path)
         self._mio_patterns_service = MioPatternsService(self._config.patterns_path)
 
         # be sure to refactor, remove the god class

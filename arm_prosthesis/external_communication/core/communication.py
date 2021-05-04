@@ -71,7 +71,28 @@ class Communication:
         if self._config.rfcomm_enabled:
             self._rfcc_connector = RFCCConnector(self._config, self.request_queue)
 
+        self._myoelectronics_service.pattern_observable.subscribe(
+            lambda pattern: self._handle_recognized_pattern(pattern)
+        )
+
         self._logger.info('Communication initialized')
+
+    def _handle_recognized_pattern(self, pattern):
+        self._logger.info(f'Handle pattern: {pattern}')
+
+        if pattern is None:
+            return
+
+        gesture_id = self._mio_patterns_service.get_gesture_id_by_pattern(pattern)
+        self._logger.info(f'Gesture id for pattern: {gesture_id}')
+
+        if gesture_id is not None:
+            gesture = self._gesture_repository.get_gesture_by_id(gesture_id)
+
+            if gesture is not None:
+                self._hand_controller.perform_gesture(DtoToEntityConverter.convert_gesture_dto_to_gesture(gesture))
+            else:
+                self._logger.info(f'Gesture not found: {gesture_id}')
 
     @property
     def request_queue(self) -> 'Queue[Request]':
