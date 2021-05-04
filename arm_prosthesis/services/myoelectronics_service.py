@@ -44,8 +44,6 @@ class MyoelectronicsService:
     def pattern_observable(self) -> 'Observable':
         return self._pattern_subject
 
-    _time: float = 0
-
     def _run(self):
         emg_value = self._sensor.get_value()
 
@@ -54,11 +52,8 @@ class MyoelectronicsService:
         if pattern is not None:
             self._pattern_subject.on_next(pattern)
 
-        new_time = time.time()
-        print(new_time - self._time)
-        self._time = new_time
-
 
 if __name__ == '__main__':
-    reader = MyoelectronicsService()
+    path_to_model = ''
+    reader = MyoelectronicsService(path_to_model)
     reader.start()
