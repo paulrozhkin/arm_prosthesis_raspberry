@@ -38,7 +38,8 @@ class EmgSignalHandler:
                 signal_length = len(self._signal)
                 if signal_length >= self._min_values_in_signal:
                     self._logger.info(f'New signal detected with length {signal_length}')
-                    pattern = self._handle_signal(self._signal)
+                    result = self._handle_signal(self._signal)
+                    pattern = int(result[0])
                 else:
                     self._logger.info(f'Signal detected, but skip with length {signal_length}')
 

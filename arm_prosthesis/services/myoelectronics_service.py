@@ -28,6 +28,7 @@ class MyoelectronicsService:
         if self._executor is not None:
             raise Exception("Service already started.")
 
+        self._sensor.start_sensor()
         self._executor = StoppableThread(self._run)
         self._executor.run()
         self._logger.info('[MyoelectronicsService] started')
@@ -36,6 +37,7 @@ class MyoelectronicsService:
         if self._executor is None:
             raise Exception("Service not started.")
 
+        self._sensor.stop_sensor()
         self._executor.stop()
         self._executor = None
         self._logger.info('[MyoelectronicsService] stopped')
@@ -54,6 +56,8 @@ class MyoelectronicsService:
 
 
 if __name__ == '__main__':
-    path_to_model = ''
+    path_to_model = '/home/pi/arm-prosthesis-bin/knn_model'
     reader = MyoelectronicsService(path_to_model)
     reader.start()
+
+    reader.pattern_observable.subscribe(lambda x: print(x))
