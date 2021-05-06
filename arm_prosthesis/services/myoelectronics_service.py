@@ -1,27 +1,63 @@
 import logging
+import pickle
 import time
-import Adafruit_ADS1x15
 
+from rx import Observable
+from rx.subject import Subject
+
+from arm_prosthesis.services.myoelectronics.emg_signal_handler import EmgSignalHandler
 from arm_prosthesis.services.myoelectronics.myoelectronics_sensor import MyoelectronicsSensor
+from arm_prosthesis.utils.stoppable_thread import StoppableThread
 
 
 class MyoelectronicsService:
     _logger = logging.getLogger('Main')
 
-    def __init__(self):
-        self._sensor = MyoelectronicsSensor()
+    _executor: StoppableThread = None
 
-    def run(self):
-        while True:
-            start_time = time.time()
-            values = self._sensor.get_value()
-            print('| {0:>6} |'.format(values))
-            # Pause for half a second.
-            time.sleep(0.005)
-            end_time = time.time()
-            print(end_time - start_time)
+    def __init__(self, path_to_model):
+        self._sensor = MyoelectronicsSensor()
+        self._pattern_subject = Subject()
+
+        self._logger.info('Start loading pattern model')
+        self._loaded_model = pickle.load(open(path_to_model, 'rb'))
+        self._emg_handler = EmgSignalHandler(self._loaded_model)
+        self._logger.info('Patterns model loading')
+
+    def start(self):
+        if self._executor is not None:
+            raise Exception("Service already started.")
+
+        self._sensor.start_sensor()
+        self._executor = StoppableThread(self._run)
+        self._executor.run()
+        self._logger.info('[MyoelectronicsService] started')
+
+    def stop(self):
+        if self._executor is None:
+            raise Exception("Service not started.")
+
+        self._sensor.stop_sensor()
+        self._executor.stop()
+        self._executor = None
+        self._logger.info('[MyoelectronicsService] stopped')
+
+    @property
+    def pattern_observable(self) -> 'Observable':
+        return self._pattern_subject
+
+    def _run(self):
+        emg_value = self._sensor.get_value()
+
+        pattern = self._emg_handler.handle(emg_value)
+
+        if pattern is not None:
+            self._pattern_subject.on_next(pattern)
 
 
 if __name__ == '__main__':
-    reader = MyoelectronicsService()
-    reader.run()
+    path_to_model = '/home/pi/arm-prosthesis-bin/knn_model'
+    reader = MyoelectronicsService(path_to_model)
+    reader.start()
+
+    reader.pattern_observable.subscribe(lambda x: print(x))

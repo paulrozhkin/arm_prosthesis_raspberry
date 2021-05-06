@@ -4,7 +4,6 @@ import os
 
 from arm_prosthesis.external_communication.models.dto.get_settings_dto import GetSettingsDto
 from arm_prosthesis.external_communication.models.dto.set_settings_dto import SetSettingsDto
-from arm_prosthesis.models.mode_type import ModeType
 
 
 class SettingsDao:
@@ -24,7 +23,6 @@ class SettingsDao:
         return self._settings
 
     def save(self, settings: SetSettingsDto):
-        self._settings.type_work = settings.type_work
         self._settings.enable_emg = settings.enable_emg
         self._settings.enable_display = settings.enable_display
         self._settings.enable_driver = settings.enable_driver
@@ -44,7 +42,6 @@ class SettingsDao:
         self._logger.info('Start create new settings')
 
         settings = GetSettingsDto()
-        settings.type_work = ModeType.Auto
         settings.enable_emg = False
         settings.enable_driver = False
         settings.enable_display = False
@@ -54,7 +51,6 @@ class SettingsDao:
 
     def _save_settings_to_file(self, settings: GetSettingsDto):
         settings_content_default = {
-            "type_work": settings.type_work,
             "enable_emg": settings.enable_emg,
             "enable_display": settings.enable_display,
             "enable_gyro": settings.enable_gyro,
@@ -69,7 +65,6 @@ class SettingsDao:
 
         with open(self._path_to_settings_file, 'r') as settings_file:
             settings_content = json.load(settings_file)
-            settings.type_work = ModeType(settings_content['type_work'])
             settings.enable_emg = settings_content['enable_emg']
             settings.enable_display = settings_content['enable_display']
             settings.enable_gyro = settings_content['enable_gyro']

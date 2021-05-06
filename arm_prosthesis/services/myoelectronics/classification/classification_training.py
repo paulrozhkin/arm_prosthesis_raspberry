@@ -20,7 +20,7 @@ class ClassificationTraining:
     def __init__(self):
         pass
 
-    def train(self, tagged_signals: Dict[int, str]):
+    def train(self, tagged_signals: Dict[int, str], output_model_path: str):
         features_inputs = []
         output = []
 
@@ -51,7 +51,7 @@ class ClassificationTraining:
         print("Test RMSE:" + str(ClassificationTraining.calculate_rmse(knn_model, features_test, output_test)))
 
         # Save model
-        with open('knn_model', 'wb') as knn_file:
+        with open(output_model_path, 'wb') as knn_file:
             pickle.dump(knn_model, knn_file)
 
     @staticmethod
@@ -76,6 +76,7 @@ class ClassificationTraining:
 
 if __name__ == '__main__':
     path_to_gestures = '//home/pi/arm-prosthesis/data/gestures/training/'
+    model_path = '//home/pi/arm-prosthesis-bin/knn_model'
 
     tagged_gestures = {}
     for gesture_id in gestures_signals_names:
@@ -84,4 +85,4 @@ if __name__ == '__main__':
         tagged_gestures[gesture_id] = gesture_path
 
     classification_trainer = ClassificationTraining()
-    classification_trainer.train(tagged_gestures)
+    classification_trainer.train(tagged_gestures, model_path)

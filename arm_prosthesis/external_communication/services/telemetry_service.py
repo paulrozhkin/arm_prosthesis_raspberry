@@ -1,15 +1,15 @@
 from arm_prosthesis.external_communication.models.dto.telemetry_dto import TelemetryDto
 from arm_prosthesis.services.gesture_repository import GestureRepository
-from arm_prosthesis.services.motor_driver_communication import MotorDriverCommunication
+from arm_prosthesis.services.motor_driver_communication import ActuatorControllerService
 import enums_pb2 as enums
 
 
 class TelemetryService:
     _gesture_repository: GestureRepository
-    _driver_communication: MotorDriverCommunication
+    _driver_communication: ActuatorControllerService
 
     def __init__(self, gesture_repository: GestureRepository,
-                 driver_communication: MotorDriverCommunication):
+                 driver_communication: ActuatorControllerService):
         self._gesture_repository = gesture_repository
         self._driver_communication = driver_communication
 

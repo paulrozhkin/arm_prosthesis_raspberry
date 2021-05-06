@@ -1,20 +1,25 @@
 import logging
 import time
-from queue import Queue, Empty
+from queue import Queue
+from typing import List
 
 import crc8
 import spidev
 
+import enums_pb2 as enums
+from arm_prosthesis.models.actuator_controller_queue import ActuatorControllerQueue, ActuatorControllerCommand
 from arm_prosthesis.models.driver_telemetry import DriverTelemetry
 from arm_prosthesis.models.motor_positions import MotorPositions
-import enums_pb2 as enums
+from arm_prosthesis.utils.stoppable_thread import StoppableThread
 
 
-class MotorDriverCommunication:
+class ActuatorControllerService:
     _logger = logging.getLogger('Main')
+    _default_interval = 0.5
+    _telemetry_thread: StoppableThread = None
 
     def __init__(self):
-        self._set_positions_queue: 'Queue[MotorPositions]' = Queue()
+        self._set_positions_queue: 'Queue[ActuatorControllerQueue]' = Queue()
         self._empty_payload = [0xFF] * 9
         self._telemetry_request = [0x00] * 9
         self._telemetry_request[8] = int.from_bytes(self._get_crc8_for_request(self._telemetry_request), "big")
@@ -23,6 +28,34 @@ class MotorDriverCommunication:
     @property
     def telemetry(self) -> DriverTelemetry:
         return self._telemetry
+
+    def enable_telemetry(self, interval_in_ms=None):
+        if self._telemetry_thread is not None:
+            raise Exception('Telemetry already started')
+
+        if interval_in_ms is None:
+            interval_seconds = self._default_interval
+        else:
+            interval_seconds = interval_in_ms / 1000
+
+        if interval_seconds < 0:
+            raise Exception('Incorrect interval')
+
+        self._telemetry_thread = StoppableThread(self._telemetry_runner, interval_seconds)
+        self._telemetry_thread.start()
+        self._logger.info('Telemetry started')
+
+    def disable_telemetry(self):
+        if self._telemetry_thread is None:
+            raise Exception('Telemetry not started')
+
+        self._telemetry_thread.stop()
+        self._telemetry_thread = None
+        self._logger.info('Telemetry stopped')
+
+    def _telemetry_runner(self):
+        queue_command = ActuatorControllerQueue(ActuatorControllerCommand.TELEMETRY)
+        self._set_positions_queue.put(queue_command)
 
     def run(self):
         spi = spidev.SpiDev()
@@ -33,38 +66,33 @@ class MotorDriverCommunication:
 
         self._logger.info('Motor driver communication running')
         while 1:
-            try:
-                positions: MotorPositions = self._set_positions_queue.get(timeout=0.5)
+            new_command: ActuatorControllerQueue
+            new_command = self._set_positions_queue.get()
+
+            requests: List[int]
+            if new_command.command_type == ActuatorControllerCommand.SET_POSITIONS:
                 self._logger.info('New positions receive from the queue. Send to driver')
+                request = self._create_set_positions_request(new_command.motor_positions)
+                logging.info(f"Send to driver: {request}")
+            else:
+                if new_command.command_type == ActuatorControllerCommand.TELEMETRY:
+                    request = self._telemetry_request
+                else:
+                    raise Exception('Not supported')
 
-                protocol_driver_package = [0x00] * 9
-                protocol_driver_package[0] = 1
-                protocol_driver_package[1] = 0
-                protocol_driver_package[2] = positions.little_finger_angle_position
-                protocol_driver_package[3] = positions.ring_finger_angle_position
-                protocol_driver_package[4] = positions.middle_finger_angle_position
-                protocol_driver_package[5] = positions.index_finger_angle_position
-                protocol_driver_package[6] = positions.thumb_finger_angle_position
-                protocol_driver_package[7] = positions.thumb_ejector_angle_position
-                protocol_driver_package[8] = self._get_crc8_for_request(protocol_driver_package)
-                logging.info(f"Send to driver: {protocol_driver_package}")
-                spi.xfer(protocol_driver_package)
+            spi.xfer(request)
+            time.sleep(0.02)
 
-                time.sleep(0.02)
+            # receive telemetry
+            result = spi.xfer(self._empty_payload)
 
-                # receive telemetry
-                result = spi.xfer(self._empty_payload)
+            self._set_telemetry(result)
+            if new_command.command_type != ActuatorControllerCommand.TELEMETRY:
                 logging.info(f"Receive from driver: {result}")
-                self._set_telemetry(result)
-            except Empty as error:
-                # receive telemetry
-                spi.xfer(self._telemetry_request)
-                time.sleep(0.02)
-                result = spi.xfer(self._empty_payload)
-                self._set_telemetry(result)
 
     def set_new_positions(self, positions: MotorPositions):
-        self._set_positions_queue.put(positions)
+        queue_command = ActuatorControllerQueue(ActuatorControllerCommand.SET_POSITIONS, positions)
+        self._set_positions_queue.put(queue_command)
 
     def _set_telemetry(self, response_driver: bytes):
         if response_driver[0] == 0:
@@ -104,3 +132,16 @@ class MotorDriverCommunication:
             crc_calculator.update(request[i].to_bytes(1, 'little'))
 
         return crc_calculator.digest()
+
+    def _create_set_positions_request(self, positions: MotorPositions):
+        protocol_driver_package = [0x00] * 9
+        protocol_driver_package[0] = 1
+        protocol_driver_package[1] = 0
+        protocol_driver_package[2] = positions.little_finger_angle_position
+        protocol_driver_package[3] = positions.ring_finger_angle_position
+        protocol_driver_package[4] = positions.middle_finger_angle_position
+        protocol_driver_package[5] = positions.index_finger_angle_position
+        protocol_driver_package[6] = positions.thumb_finger_angle_position
+        protocol_driver_package[7] = positions.thumb_ejector_angle_position
+        protocol_driver_package[8] = int.from_bytes(self._get_crc8_for_request(protocol_driver_package))
+        return protocol_driver_package

@@ -56,3 +56,15 @@ class MyoelectronicsSensor:
 
         return int(value_from_16_bit_sensor * self._coefficient_conversation)
 
+
+if __name__ == '__main__':
+    test = MyoelectronicsSensor()
+
+    test.start_sensor()
+
+    try:
+        while True:
+            print(test.get_value())
+    finally:
+        print('Sensor stop')
+        test.stop_sensor()

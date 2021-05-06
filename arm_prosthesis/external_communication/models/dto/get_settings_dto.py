@@ -2,25 +2,15 @@ import json
 
 from arm_prosthesis.external_communication.models.dto.entity_dto import EntityDto
 from arm_prosthesis.external_communication.services.dto_to_entity_converter import DtoToEntityConverter
-from arm_prosthesis.models.mode_type import ModeType
 from settings_pb2 import GetSettings
 
 
 class GetSettingsDto(EntityDto):
     def __init__(self):
-        self._type_work = ModeType.Auto
         self._enable_emg: bool = False
         self._enable_display: bool = False
         self._enable_gyro: bool = False
         self._enable_driver: bool = False
-
-    @property
-    def type_work(self) -> ModeType:
-        return self._type_work
-
-    @type_work.setter
-    def type_work(self, value: ModeType):
-        self._type_work = value
 
     @property
     def enable_emg(self) -> bool:
@@ -57,7 +47,6 @@ class GetSettingsDto(EntityDto):
     def deserialize(self, byte_array: bytes):
         get_settings_protobuf = GetSettings()
         get_settings_protobuf.ParseFromString(byte_array)
-        self._type_work = DtoToEntityConverter.convert_mode_type_protobuf_to_mode_type(get_settings_protobuf.type_work)
         self._enable_emg = get_settings_protobuf.enable_emg
         self._enable_display = get_settings_protobuf.enable_display
         self._enable_gyro = get_settings_protobuf.enable_gyro
@@ -65,7 +54,6 @@ class GetSettingsDto(EntityDto):
 
     def serialize(self) -> bytes:
         get_settings_protobuf = GetSettings()
-        get_settings_protobuf.type_work = DtoToEntityConverter.convert_mode_type_to_mode_type_protobuf(self.type_work)
         get_settings_protobuf.enable_emg = self._enable_emg
         get_settings_protobuf.enable_display = self._enable_display
         get_settings_protobuf.enable_gyro = self._enable_gyro

@@ -1,0 +1,16 @@
+syntax="proto3";
+package patterns;
+import "uuid.proto";
+
+message MioPattern {
+  int64 pattern = 1;
+  uuid.UUID gesture_id = 2;
+}
+
+message GetMioPatterns {
+  repeated MioPattern patterns = 1;
+}
+
+message SetMioPatterns {
+  repeated MioPattern patterns = 1;
+}
