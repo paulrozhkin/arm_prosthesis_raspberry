@@ -143,5 +143,6 @@ class ActuatorControllerService:
         protocol_driver_package[5] = positions.index_finger_angle_position
         protocol_driver_package[6] = positions.thumb_finger_angle_position
         protocol_driver_package[7] = positions.thumb_ejector_angle_position
-        protocol_driver_package[8] = int.from_bytes(self._get_crc8_for_request(protocol_driver_package))
+        protocol_driver_package[8] = int.from_bytes(self._get_crc8_for_request(protocol_driver_package),
+                                                    byteorder="big")
         return protocol_driver_package
