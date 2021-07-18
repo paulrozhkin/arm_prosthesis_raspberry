@@ -13,13 +13,15 @@
 - Обработка показаний миоэлектрических датчиков и выделение паттернов жестов. Количество распознаваемых паттернов 2.
 - Передача управляющих команд для установки положения линейных двигателей по интерфейсу SPI на [контроллер линейных приводов](https://github.com/paulrozhkin/handcontrol-motor-controller)
 
+Схема контроллера доступна в репозитории [RaspberryProsthesisCircuit](https://github.com/paulrozhkin/raspberry-prosthesis-circuit)
+
 ## Linked Repositories
 - [Документация](https://github.com/paulrozhkin/handcontrol-documentation)
 - [Контроллер управления линейными приводами на STM32F103C8T6](https://github.com/paulrozhkin/handcontrol-motor-controller)
 - [Приложение для конфигурирования протеза для ПК на WPF](https://github.com/paulrozhkin/HandControlApplication)
 - [Приложение для управления протезом для Android](https://github.com/ForsaiR/HandControlAndroidAplication)
-- [Схемотехника драйвера моторов (Altium Designer)](https://github.com/paulrozhkin/DCDriverShematic)
-- [Схемотехника контроллера управления (Altium Designer)](https://github.com/paulrozhkin/ArmProsthesisShematic)
+- [Схемотехника драйвера моторов STM32F103C8T6 (Altium Designer)](https://github.com/paulrozhkin/DCDriverShematic)
+- [Схемотехника контроллера управления Rasbperry Pi Zero W (Altium Designer)](https://github.com/paulrozhkin/raspberry-prosthesis-circuit)
 - [Сервер для одновременной работы с несколькими протезами по MQTT на Kotlin](https://github.com/paulrozhkin/hand-control-mqtt)
 - [MQTT proxy для контроллера управления протеза для STM32F767ZITX](https://github.com/paulrozhkin/handcontrol-mqtt-proxy)
 
