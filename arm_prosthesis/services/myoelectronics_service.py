@@ -30,7 +30,7 @@ class MyoelectronicsService:
 
         self._sensor.start_sensor()
         self._executor = StoppableThread(self._run)
-        self._executor.run()
+        self._executor.start()
         self._logger.info('[MyoelectronicsService] started')
 
     def stop(self):

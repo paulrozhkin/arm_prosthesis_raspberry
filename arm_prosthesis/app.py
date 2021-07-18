@@ -18,7 +18,7 @@ from arm_prosthesis.services.settings_dao import SettingsDao
 
 class App:
     def __init__(self):
-        self._config = load_config('./config/config.ini')
+        self._config = load_config('/home/pi/arm-prosthesis/arm_prosthesis/config/config.ini')
         self.init_logger()
         self._logger = logging.getLogger('Main')
         self._logger.info('Logger init. Start app.')

@@ -280,14 +280,14 @@ class Communication:
         settings_dto = SetSettingsDto()
         settings_dto.deserialize(payload)
 
+        old_emg = self._settings.enable_emg
+
         self._settings_dao.save(settings_dto)
 
         if settings_dto.power_off:
             logging.info(f'Power off')
-            os.system("shutdown now -h")
-            exit()
-
-        old_emg = self._settings.enable_emg
+            os.system("sudo shutdown now -h")
+            exit(0)
 
         self._settings = self._settings_dao.get()
 
